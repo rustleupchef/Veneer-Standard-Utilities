@@ -33,6 +33,12 @@ public static class StandardLibrary {
         return path;
     |
 
+    public static tooth<string> HashContent(string content) language("CSHARP") => |
+        byte[] inputBytes = Encoding.UTF8.GetBytes(content);
+        byte[] hashBytes = SHA256.HashData(inputBytes);
+        return Convert.ToHexString(hashBytes);
+    |
+
     public static tooth<Delegate> Load(
         string path,
         string name,
@@ -97,17 +103,40 @@ public static class StandardLibrary {
         Type[] parameterTypes,
         Type returnType) language("CSHARP") => |
         #if JUST_IN_TIME
-            programmingLanguage = programmingLanguage.ToUpper().TrimStart('\"').TrimEnd('\"');
-            string build = Path.Combine(Path.GetTempPath(), "veneer-build-foreign-code");
-            Directory.CreateDirectory(build);
-            Dictionary<string, LanguageConfig.Config>? configs = JsonSerializer.Deserialize<Dictionary<string, LanguageConfig.Config>>(GetConfigContent());
-            configs ??= new Dictionary<string, LanguageConfig.Config>();
-            Transpiler transpiler = new Transpiler(new List<Tokens.Token>(), build, configs, false);
-            string? path = transpiler.CompileFunction(function, programmingLanguage);
+            string AddExtension(string file)
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    return $"{file}.dll";
+                
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    return $"{file}.so";
+                
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    return $"{file}.dylib";
+                
+                return file;
+            }
+            string dll = AddExtension(Path.Combine(GetCacheDirectory(), HashContent(function)));
 
-            if (string.IsNullOrEmpty(path)) return null;
+            if (!File.Exists(dll)) {
+                programmingLanguage = programmingLanguage.ToUpper().TrimStart('\"').TrimEnd('\"');
 
-            return Load(path, functionName, returnType, parameterTypes);
+                string build = Path.Combine(Path.GetTempPath(), "veneer-build-foreign-code");
+                Directory.CreateDirectory(build);
+
+                Dictionary<string, LanguageConfig.Config>? configs = JsonSerializer.Deserialize<Dictionary<string, LanguageConfig.Config>>(GetConfigContent());
+                configs ??= new Dictionary<string, LanguageConfig.Config>();
+
+                Transpiler transpiler = new Transpiler(new List<Tokens.Token>(), build, configs, false);
+                string? path = transpiler.CompileFunction(function, programmingLanguage);
+
+                if (string.IsNullOrEmpty(path)) return null;
+                
+                File.Move(path, dll);
+                Directory.Delete(build, true);
+            }
+
+            return Load(dll, functionName, returnType, parameterTypes);
         #else
             return null;
         #endif
