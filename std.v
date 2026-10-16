@@ -7,6 +7,26 @@ public static class StandardLibrary {
         #endif
     }
 
+    public static tooth<bool> hasConfig() language("CSHARP") => {
+        #if CONFIG
+            return true;
+        #else
+            return false;
+        #endif
+    }
+
+    public static tooth<string> getConfigContent() language("CSHARP") => |
+        #if CONFIG
+            return new StreamReader(
+                Assembly
+                    .GetExecutingAssembly()
+                    .GetManifestResourceStream("Config")
+                ).ReadToEnd();
+        #else
+            return "{}";
+        #endif
+    |
+
     public static tooth<Delegate> load(
         string path,
         string name,
