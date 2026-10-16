@@ -83,4 +83,27 @@ public static class StandardLibrary {
             return null;
         #endif
     delimeter
+
+    public static tooth<Delegate> loadCompiledFunction(
+        string programmingLanguage,
+        string function,
+        string functionName,
+        Type[] parameterTypes,
+        Type returnType) language("CSHARP") => |
+        #if JUST_IN_TIME
+            programmingLanguage = programmingLanguage.ToUpper().TrimStart('\"').TrimEnd('\"');
+            string build = Path.Combine(Path.GetTempPath(), "veneer-build-foreign-code");
+            Directory.CreateDirectory(build);
+            Dictionary<string, LanguageConfig.Config>? configs = JsonSerializer.Deserialize<Dictionary<string, LanguageConfig.Config>>(getConfigContent());
+            configs ??= new Dictionary<string, LanguageConfig.Config>();
+            Transpiler transpiler = new Transpiler(new List<Tokens.Token>(), build, configs, false);
+            string? path = transpiler.CompileFunction(function, programmingLanguage);
+
+            if (string.IsNullOrEmpty(path)) return null;
+
+            return load(path, functionName, returnType, parameterTypes);
+        #else
+            return null;
+        #endif
+    |
 }
