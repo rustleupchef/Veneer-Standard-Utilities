@@ -27,6 +27,12 @@ public static class StandardLibrary {
         #endif
     |
 
+    public static tooth<string> GetCacheDirectory() language("CSHARP") => |
+        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Veneer"); 
+        Directory.CreateDirectory(path);
+        return path;
+    |
+
     public static tooth<Delegate> Load(
         string path,
         string name,
@@ -94,7 +100,7 @@ public static class StandardLibrary {
             programmingLanguage = programmingLanguage.ToUpper().TrimStart('\"').TrimEnd('\"');
             string build = Path.Combine(Path.GetTempPath(), "veneer-build-foreign-code");
             Directory.CreateDirectory(build);
-            Dictionary<string, LanguageConfig.Config>? configs = JsonSerializer.Deserialize<Dictionary<string, LanguageConfig.Config>>(getConfigContent());
+            Dictionary<string, LanguageConfig.Config>? configs = JsonSerializer.Deserialize<Dictionary<string, LanguageConfig.Config>>(GetConfigContent());
             configs ??= new Dictionary<string, LanguageConfig.Config>();
             Transpiler transpiler = new Transpiler(new List<Tokens.Token>(), build, configs, false);
             string? path = transpiler.CompileFunction(function, programmingLanguage);
