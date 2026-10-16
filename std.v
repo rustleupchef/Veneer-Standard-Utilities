@@ -1,5 +1,5 @@
 public static class StandardLibrary {
-    public static tooth<bool> isJIT() language("CSHARP") => {
+    public static tooth<bool> IsJIT() language("CSHARP") => {
         #if JUST_IN_TIME
             return true;
         #else
@@ -7,7 +7,7 @@ public static class StandardLibrary {
         #endif
     }
 
-    public static tooth<bool> hasConfig() language("CSHARP") => {
+    public static tooth<bool> HasConfig() language("CSHARP") => {
         #if CONFIG
             return true;
         #else
@@ -15,7 +15,7 @@ public static class StandardLibrary {
         #endif
     }
 
-    public static tooth<string> getConfigContent() language("CSHARP") => |
+    public static tooth<string> GetConfigContent() language("CSHARP") => |
         #if CONFIG
             return new StreamReader(
                 Assembly
@@ -27,7 +27,7 @@ public static class StandardLibrary {
         #endif
     |
 
-    public static tooth<Delegate> load(
+    public static tooth<Delegate> Load(
         string path,
         string name,
         Type returnType,
@@ -84,7 +84,7 @@ public static class StandardLibrary {
         #endif
     delimeter
 
-    public static tooth<Delegate> loadCompiledFunction(
+    public static tooth<Delegate> LoadCompiledFunction(
         string programmingLanguage,
         string function,
         string functionName,
@@ -101,7 +101,7 @@ public static class StandardLibrary {
 
             if (string.IsNullOrEmpty(path)) return null;
 
-            return load(path, functionName, returnType, parameterTypes);
+            return Load(path, functionName, returnType, parameterTypes);
         #else
             return null;
         #endif
